@@ -1,0 +1,8 @@
+.env
+api/.venv/
+api/datos/
+__pycache__/
+*.pyc
+.DS_Store
+compose.yaml.save
+.vscode/

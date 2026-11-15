@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fc">
+  <meta name="description" content="StorageLab - Inventario de discos SSD y HDD del Grupo 3">
+  <title>StorageLab | Inventario · Grupo 3</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <a class="brand" href="#inicio" aria-label="StorageLab inicio">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 9h8M8 13h5"/><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="brand-copy"><strong>StorageLab</strong><span>Inventario de hardware</span></div>
+      </a>
+      <div class="sidebar-section-label">ESPACIO DE TRABAJO</div>
+      <nav class="nav-items" aria-label="Módulos">
+        <a class="nav-link active" href="#inicio" id="navInicio"><span class="nav-icon">▦</span> Resumen</a>
+        <a class="nav-link" href="#inventario" id="navInventario"><span class="nav-icon">▤</span> Inventario</a>
+        <button type="button" class="nav-link nav-action" id="navRegistrar"><span class="nav-icon">＋</span> Nuevo disco <span class="nav-trailing">↗</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="aside-panel">
+        <div class="aside-panel-title">ARQUITECTURA</div>
+        <div class="tech-item"><span class="tech-dot teal"></span> Flask + Gunicorn</div>
+        <div class="tech-item"><span class="tech-dot blue"></span> nginx + Docker Compose</div>
+        <div class="tech-item"><span class="tech-dot purple"></span> SQLite persistente</div>
+      </div>
+      <div class="sidebar-bottom"><span id="apiDot" class="connection-dot checking"></span><span id="apiStatus">Comprobando API...</span><span class="sidebar-version">v1.0</span></div>
+    </aside>
+
+    <main class="main-content" id="inicio">
+      <div class="topstrip">
+        <div class="breadcrumb">Arquitectura de Computadoras <span>/</span> Grupo 03 <span>/</span> <b>Almacenamiento</b></div>
+        <div class="top-actions"><span class="environment"><span class="env-dot"></span> Docker Compose</span><button id="themeToggle" class="icon-button" type="button" aria-label="Cambiar tema" title="Cambiar entre tema claro y oscuro"><span id="themeIcon" aria-hidden="true">☾</span><span id="themeText">Oscuro</span></button></div>
+      </div>
+
+      <header class="page-heading">
+        <div><p class="eyebrow">PANEL DE CONTROL · GRUPO 03</p><h1>Inventario de almacenamiento<span class="title-dot">.</span></h1><p class="subtitle">Gestiona y consulta tus unidades SSD y HDD en tiempo real.</p></div>
+        <div class="page-actions"><button type="button" id="btnActualizar" class="button button-secondary"><span aria-hidden="true">↻</span> Actualizar</button><button type="button" id="btnNuevo" class="button button-primary"><span aria-hidden="true">＋</span> Nuevo disco</button></div>
+      </header>
+
+      <section class="metrics" aria-label="Indicadores del inventario">
+        <article class="metric-card"><div class="metric-row"><span class="metric-label">Total de dispositivos</span><span class="metric-symbol violet">▦</span></div><div class="metric-value" id="totalDiscos">—</div><div class="metric-detail"><span class="metric-accent purple-text">Inventario</span> · unidades registradas</div></article>
+        <article class="metric-card"><div class="metric-row"><span class="metric-label">Unidades SSD</span><span class="metric-symbol teal">◈</span></div><div class="metric-value" id="totalSSD">—</div><div class="metric-detail"><span class="metric-accent green-text">Estado sólido</span> · alto rendimiento</div></article>
+        <article class="metric-card"><div class="metric-row"><span class="metric-label">Unidades HDD</span><span class="metric-symbol blue">◉</span></div><div class="metric-value" id="totalHDD">—</div><div class="metric-detail"><span class="metric-accent blue-text">Magnéticos</span> · gran capacidad</div></article>
+        <article class="metric-card"><div class="metric-row"><span class="metric-label">Capacidad acumulada</span><span class="metric-symbol amber">▰</span></div><div class="metric-value" id="capacidadTotal">—</div><div class="metric-detail"><span class="metric-accent amber-text">GB decimales</span> · capacidad total</div></article>
+      </section>
+
+      <section class="inventory-panel" id="inventario" aria-labelledby="inventoryTitle">
+        <div class="section-header"><div><div class="section-title-row"><h2 id="inventoryTitle">Inventario de discos</h2><span class="count-badge" id="inventarioCount">—</span></div><p>Dispositivos registrados y almacenados en SQLite.</p></div><span class="source-label"><span class="source-dot"></span> GET /api/discos</span></div>
+        <div class="toolbar"><label class="search-field"><span aria-hidden="true">⌕</span><input id="busqueda" type="search" placeholder="Buscar por marca, modelo o interfaz" aria-label="Buscar discos"></label><label class="select-wrap"><span class="sr-only">Filtrar por tipo</span><select id="filtroTipo"><option value="">Todos los tipos</option><option value="SSD">SSD</option><option value="HDD">HDD</option></select></label></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>MARCA / MODELO</th><th>TIPO</th><th>CAPACIDAD</th><th>INTERFAZ</th><th class="align-right">PRECIO (USD)</th></tr></thead><tbody id="tablaDiscos"><tr><td class="empty-state" colspan="6">Cargando inventario...</td></tr></tbody></table></div>
+        <div class="table-footer"><span id="contadorTabla">—</span><span class="footer-hint">Los cambios se almacenan en SQLite</span></div>
+      </section>
+      <footer class="app-footer"><span>StorageLab · Tarea 5 · Arquitectura de Computadoras</span><span>Grupo 3 · Flask · nginx · SQLite</span></footer>
+    </main>
+  </div>
+
+  <dialog id="registroModal" class="modal" aria-labelledby="modalTitle">
+    <div class="modal-heading"><div class="modal-heading-icon">＋</div><div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Registrar disco</h2><p>Completa la información del dispositivo.</p></div><button type="button" id="cerrarModal" class="close-button" aria-label="Cerrar formulario">×</button></div>
+    <form id="formDisco"><div class="modal-body"><div class="form-grid"><label>Marca <span class="required">*</span><input name="marca" required maxlength="80" placeholder="Ej. Samsung" autocomplete="off"></label><label>Modelo <span class="required">*</span><input name="modelo" required maxlength="120" placeholder="Ej. 990 PRO" autocomplete="off"></label><label>Tipo <span class="required">*</span><select name="tipo" required><option value="SSD">SSD (estado sólido)</option><option value="HDD">HDD (mecánico)</option></select></label><label>Capacidad (GB) <span class="required">*</span><input name="capacidad_gb" type="number" min="1" step="1" required placeholder="Ej. 1000"></label><label>Interfaz <span class="required">*</span><input name="interfaz" required maxlength="80" placeholder="Ej. NVMe / SATA III" autocomplete="off"></label><label>Precio (USD) <span class="required">*</span><input name="precio_usd" type="number" min="0" step="0.01" required placeholder="Ej. 89.99"></label></div><p id="mensaje" class="form-message" role="status" aria-live="polite"></p></div><div class="modal-footer"><button type="button" class="button button-secondary" id="cancelarModal">Cancelar</button><button type="submit" id="btnGuardar" class="button button-primary">＋ Guardar dispositivo</button></div></form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

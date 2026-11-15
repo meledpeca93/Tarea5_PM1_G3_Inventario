@@ -1,0 +1,45 @@
+FROM python:3.12-slim
+
+LABEL grupo="3"
+LABEL componente="Almacenamiento"
+LABEL aplicacion="g3-discos-api"
+LABEL version="1.0"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    APP_NOMBRE=g3-discos-api \
+    DB_PATH=/datos/inventario.db
+
+WORKDIR /app
+
+# Instalar dependencias
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el codigo de la aplicacion
+COPY . .
+
+# Crear usuario sin privilegios y directorio de datos
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /app app \
+    && mkdir -p /datos \
+    && chown -R app:app /app /datos
+
+# Directorio persistente
+VOLUME /datos
+
+# Cambiar a usuario sin privilegios
+USER app
+
+EXPOSE 5000
+
+# Verificar que la API responda
+HEALTHCHECK --interval=10s \
+    --timeout=3s \
+    --start-period=15s \
+    --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/estado', timeout=2)" || exit 1
+
+# Servidor de produccion con 2 trabajadores
+CMD ["gunicorn", "--preload", "--workers", "2", "--bind", "0.0.0.0:5000", "app:app"]

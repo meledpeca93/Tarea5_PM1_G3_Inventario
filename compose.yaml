@@ -1,0 +1,88 @@
+name: g3-inventario
+
+services:
+
+  api:
+    image: g3-discos-api:1.0
+
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+
+    environment:
+      APP_NOMBRE: g3-discos-api
+      DB_PATH: /datos/inventario.db
+
+    volumes:
+      - datos:/datos
+
+    networks:
+      - red-g3
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+          pids: 100
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/estado', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
+  web:
+    image: g3-discos-web:1.0
+
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+
+    ports:
+      - "8083:80"
+
+    depends_on:
+      api:
+        condition: service_healthy
+
+    networks:
+      - red-g3
+
+    restart: unless-stopped
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Definir contraseña en .env}
+      MSSQL_MEMORY_LIMIT_MB: "1536"
+    volumes:
+      - sql-datos:/var/opt/mssql
+    networks:
+      - red-g3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+
+volumes:
+  datos:
+    name: g3-inventario-datos
+
+  sql-datos:
+    name: g3-inventario-sql-datos
+
+networks:
+  red-g3:
+    name: red-g3
+    driver: bridge
