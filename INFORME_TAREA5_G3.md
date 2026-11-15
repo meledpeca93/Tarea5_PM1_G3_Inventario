@@ -296,6 +296,28 @@ Ejecuta la API como el usuario sin privilegios `app`, usa Gunicorn con dos traba
 **¿Qué falta para obtener el punto extra de SQL Server?**  
 El servicio debe arrancar estable y ser accesible desde la red de Compose por `sqlserver:1433`. En esta revisión no lo cumple: SQL Server rechazó la contraseña configurada por no cumplir su política de complejidad y el contenedor se reinicia.
 
+### Preguntas técnicas adicionales
+
+**¿Qué ventaja tiene Compose frente a los `docker run` de las tareas 3 y 4? ¿Qué pasaría sin `condition: service_healthy`?**
+
+Compose declara los servicios, redes, volúmenes, límites y dependencias en un solo archivo reproducible, y permite levantar o detener el conjunto con un comando. Con `docker run`, cada contenedor y sus opciones se administran por separado y es más fácil omitir o cambiar una configuración. Sin `condition: service_healthy`, `depends_on` solo ordena el inicio de los contenedores: la Web podría arrancar antes de que la API esté lista para atender solicitudes, causando errores temporales de conexión o respuestas `502`.
+
+**¿Por qué la Web llega a la API con `http://api:5000` y no con `localhost`? ¿Por qué la API no necesita publicar puerto?**
+
+`api` es el nombre del servicio que Docker Compose resuelve por DNS dentro de la red compartida. Desde el contenedor Web, `localhost` apunta al propio contenedor de nginx, no al de la API. La API escucha en el puerto interno 5000 y nginx la alcanza por la red de Compose; el usuario entra por el puerto publicado de la Web (8083), así que no hace falta exponer el puerto de la API al host.
+
+**Con `--cpus=1.5`, ¿qué valor tiene `cpu.max` y qué significa? ¿Qué pasa con el proceso cuando agota su cuota en el período de 100 ms?**
+
+En esta prueba, `cpu.max=150000 100000`: la cuota es 150000 microsegundos de CPU por cada período de 100000 microsegundos, equivalente a 1.5 CPU. Al agotar la cuota, las tareas del contenedor quedan temporalmente limitadas (throttled) y esperan hasta que se renueve la cuota en el siguiente período. El proceso no se mata; puede volver a ejecutarse cuando se renueva.
+
+**¿Qué diferencia hay entre un contenedor y una máquina virtual? Nombre 4 namespaces que observó en el paso 9 y qué aísla cada uno.**
+
+Un contenedor aísla procesos usando mecanismos del kernel del host y comparte ese kernel; una máquina virtual presenta hardware virtualizado y ejecuta su propio sistema operativo y kernel. En `/proc/self/ns` se observaron, entre otros: `pid` aísla la vista de procesos e identificadores; `net` aísla interfaces y configuración de red; `mnt` aísla los puntos de montaje y la vista del sistema de archivos; `uts` aísla el hostname y el nombre de dominio.
+
+**¿Por qué no conviene ejecutar la API como root?**
+
+Aplicar el principio de mínimo privilegio limita el daño posible si la aplicación o una dependencia se compromete. El usuario `app` tiene solo los permisos necesarios para ejecutar la API y escribir en `/datos`; así se evita darle privilegios administrativos dentro del contenedor. Esto reduce el riesgo, aunque no sustituye otras medidas de seguridad.
+
 ## Problemas encontrados y resolución pendiente
 
 1. **SQL Server reinicia con código 255.** Los logs indican que la contraseña de administrador no satisface la política: al menos ocho caracteres y caracteres de al menos tres de estas cuatro categorías: mayúsculas, minúsculas, dígitos y símbolos. No se leyó ni se incluyó el valor actual. Actualizar `MSSQL_SA_PASSWORD` en `.env` con una contraseña que cumpla la política, conservarla fuera del informe y reiniciar el servicio; después confirmar que queda estable y que otro contenedor de `red-g3` lo alcanza como `sqlserver:1433`. No se hizo este cambio durante una validación solicitada como revisión.
